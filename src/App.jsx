@@ -1,63 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import { Alert } from 'bootstrap';
 import './App.css';
+import Weather from './components/weather.jsx'; // Adjusted path to Weather.jsx
 
-const KEY = 'pk.ea8b6f69d996b31315fb464524922457'; // Your provided API key
+const API_KEY = 'pk.ea8b6f69d996b31315fb464524922457'; // Your provided API key
+const BACKEND_API = 'http://localhost:5173'; // Your localhost URL
 
-export default function App() {
-  const [destination, setDestination] = useState({ display_name: 'location info' });
-  const [search, setSearch] = useState('');
-  const [error, setError] = useState(null);
+function App() {
+  const [location, setLocation] = useState({ display_name: 'City' });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [forecast, setForecast] = useState({});
+  const [weatherRender, setWeatherRender] = useState(false);
 
-  async function getDestination() {
+  useEffect(() => {
+    async function fetchWeather() {
+      if (location.lat && location.lon && !weatherRender) {
+        try {
+          const response = await axios.get(`${BACKEND_API}/weather?lat=${location.lat}&lon=${location.lon}`, {
+            headers: {
+              Authorization: `Bearer ${API_KEY}`
+            }
+          });
+          setForecast(response.data);
+          setWeatherRender(true);
+        } catch (error) {
+          console.log('Error fetching weather:', error);
+        }
+      }
+    }
+
+    fetchWeather();
+  }, [location, weatherRender]);
+
+  async function fetchLocation() {
+    const API = `https://us1.locationiq.com/v1/search.php?key=${API_KEY}&q=${searchQuery}&format=json`;
     try {
-      const API = `https://us1.locationiq.com/v1/search.php?key=${KEY}&q=${search}&format=json`;
-
       const response = await axios.get(API);
-      const data = response.data[0];
-
-      setDestination(data);
-      setError(null);
+      const locationObj = response.data[0];
+      setLocation(locationObj);
     } catch (error) {
-      setError('Error took place when fetching API');
+      console.error('Error fetching location:', error);
     }
   }
 
-  function onSearchChange(event) {
-    setSearch(event.target.value);
+  function updateQuery(event) {
+    setSearchQuery(event.target.value);
   }
 
-  function searchDestination(event) {
-    event.preventDefault();
-    getDestination();
-    setSearch(search);
-  }
-
-  function generateMap(lat, lon) {
-    const API2 = `https://maps.locationiq.com/v3/staticmap?key=${KEY}&center=${lat},${lon}&zoom=10`;
-    return API2;
+  function getTitleMessage() {
+    return location.display_name ? `${location.display_name} Information` : 'City Information';
   }
 
   return (
     <>
-      <input onChange={onSearchChange} />
-      <button onClick={searchDestination}>Search</button>
-      <h2>The city is:{destination.display_name}</h2>
-      <h2>Latitude:{destination.lat}</h2> <h2>Longitude:{destination.lon}</h2>
-      {error && (
-        <Alert variant="danger" onClose={() => setError(null)} dismissible>
-          {error}
-        </Alert>
-      )}
-      {destination.lat && destination.lon && (
-        <img
-          src={generateMap(destination.lat, destination.lon)}
-          alt="map"
-          style={{ maxWidth: '80%' }}
-        />
-      )}
+      <div className='input'>
+        <input onChange={updateQuery} />
+        <button onClick={fetchLocation}>Explore!</button>
+      </div>
+      <h1>{getTitleMessage()}</h1>
+      <h2>{location.lat} latitude, {location.lon} longitude</h2>
+      <img src={`https://maps.locationiq.com/v3/staticmap?key=${API_KEY}&center=${location.lat},${location.lon}&zoom=12&size=900x400&format=jpg&maptype=light/`} alt="Map" />
+      {weatherRender && <Weather src={forecast} />}
     </>
   );
 }
+
+export default App;
