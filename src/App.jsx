@@ -18,7 +18,7 @@ function App() {
         try {
           const response = await axios.get(`${BACKEND_API}/weather?lat=${location.lat}&lon=${location.lon}`, {
             headers: {
-              Authorization: `Bearer ${API_KEY}` // Include the API key in the request headers
+              Authorization: `Bearer ${API_KEY}`
             }
           });
           setForecast(response.data);
@@ -66,4 +66,3 @@ function App() {
 }
 
 export default App;
-
