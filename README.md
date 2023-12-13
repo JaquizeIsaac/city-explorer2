@@ -43,4 +43,4 @@ Finish time: 9pm
 
 Actual time needed to complete: 6hrs
 
-![lighthouse report lab 6]()
+![lighthouse report lab 6](lighthouse.png)
